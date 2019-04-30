@@ -60,37 +60,48 @@ func (cache *LRUCache) SaveValue(key interface{}, value interface{}) {
 			entryValue.next = previousHead
 			previousHead.pre = entryValue
 		}
-		if cache.size == cache.cap {
-			cache.Remove(cache.tail.key)
-			//newTail := cache.tail.pre
-			//newTail.next = nil
-			//cache.tail = newTail
-		} else {
-			cache.size++
+		cache.size++
+		if cache.size > cache.cap {
+			cache.removeEntry(cache.tail)
 		}
 	}
 	cache.head = entryValue
 }
 
-func (cache *LRUCache) Remove(key interface{})  {
-	entry := cache.cacheMap[key]
+func (cache *LRUCache) removeEntry(entry *entry) interface{} {
 	if entry == nil {
-		return
+		return nil
 	}
+	value := entry.value
+	delete(cache.cacheMap, entry.key)
 	previousPre := entry.pre
 	previousNext := entry.next
+	entry.next = nil
+	entry.pre = nil
+	entry.value = nil
+	cache.size--
 	if entry == cache.head {
 		cache.head = previousNext
 		if previousNext != nil {
 			previousNext.pre = nil
 		}
+		return value
 	}
 	if entry == cache.tail {
 		cache.tail = previousPre
 		if previousPre != nil {
 			previousPre.next = nil
 		}
+		return value
 	}
+	previousPre.next = previousNext
+	previousNext.pre = previousPre
+	return value
+}
+
+func (cache *LRUCache) Remove(key interface{}) interface{} {
+	entry := cache.cacheMap[key]
+	return cache.removeEntry(entry)
 }
 
 type entry struct {
